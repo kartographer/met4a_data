@@ -28,6 +28,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONPATH=/workspace/src
 ENV MPLBACKEND=Agg
 
+# Set a clean shell prompt for interactive terminals
+ENV PS1="met4a:\w$ "
+RUN printf '\n# Custom prompt for interactive shells\nexport PS1="met4a:\\w$ "\n' >> /etc/bash.bashrc \
+    && printf '\n# Custom prompt for interactive shells\nexport PS1="met4a:\\w$ "\n' >> /root/.bashrc
+
 # Upgrade pip, setuptools, and wheel to the latest versions
 RUN pip install -U pip setuptools wheel
 

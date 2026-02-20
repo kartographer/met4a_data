@@ -1,7 +1,7 @@
 {
   "name": "met4a",
-  "build": { "dockerfile": "Dockerfile" },
-  "workspaceFolder": "/workspace",
+  "build": { "dockerfile": "Dockerfile", "context": ".." },
+  "workspaceFolder": "/workspaces/met4a_data",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -16,7 +16,6 @@
     }
   },
   "containerEnv": {
-    "VIRTUAL_ENV": "/opt/venv",
-    "PATH": "/opt/venv/bin:${containerEnv:PATH}"
+    "VIRTUAL_ENV": "/opt/venv"
   }
 }
