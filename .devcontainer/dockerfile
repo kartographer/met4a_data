@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create a virtual environment and activate it
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-ENV PYTHONPATH=/workspace/src
+ENV PYTHONPATH=/workspaces/met4a_data/src
 ENV MPLBACKEND=Agg
 
 # Set a clean shell prompt for interactive terminals

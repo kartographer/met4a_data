@@ -1,4 +1,6 @@
-# Setting up MET4A in Docker
+# MET4A
+---
+### Setting up MET4A in Docker
 
 1. Make sure that Docker is installed and running (https://www.docker.com/get-started/).
 2. Click on the search bar in VSCode and type `>DevContainers: Rebuild Container`.
