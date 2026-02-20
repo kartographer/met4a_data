@@ -40,15 +40,15 @@ def dict_to_df(data: dict) -> pd.DataFrame:
     pd.DataFrame
     """
     if isinstance(data, pd.DataFrame):
-        return data  # already a dataframe
+        return data
 
-    # Case 1: dict of lists (most common)
+    # Dict of lists or list of dicts
     try:
         return pd.DataFrame(data)
     except Exception:
         pass
 
-    # Case 2: dict of dicts
+    # Dict of dicts
     try:
         return pd.DataFrame.from_dict(data, orient="index")
     except Exception:
@@ -77,7 +77,6 @@ def load_all_pickles(directory: str | Path) -> list:
 
     objects = []
 
-    # Sort so results are deterministic (very helpful for notebooks)
     for pkl_path in sorted(directory.glob("*.pkl")):
         obj = load_pickle(pkl_path)
         objects.append(obj)
