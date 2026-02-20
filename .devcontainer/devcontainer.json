@@ -2,6 +2,9 @@
   "name": "met4a",
   "build": { "dockerfile": "Dockerfile", "context": ".." },
   "workspaceFolder": "/workspaces/met4a_data",
+  "remoteEnv": {
+    "PYTHONPATH": "${containerWorkspaceFolder}/src"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
