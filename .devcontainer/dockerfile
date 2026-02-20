@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1.5
+
+# This Dockerfile sets up a Python 3.11 environment with JupyterLab and common Python libraries.
+FROM python:3.11-slim
+
+# Set environment variables to optimize Python and pip behavior
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=0
+
+WORKDIR /workspace
+
+# Install system dependencies and clean up apt cache to reduce image size
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    build-essential \
+    tini \
+    libfreetype6 \
+    libpng16-16 \
+    libjpeg62-turbo \
+    ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+# Create a virtual environment and activate it
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH=/workspace/src
+ENV MPLBACKEND=Agg
+
+# Upgrade pip, setuptools, and wheel to the latest versions
+RUN pip install -U pip setuptools wheel
+
+# Install Python dependencies from requirements.txt, using cache to speed up subsequent builds
+COPY requirements.txt /workspace/requirements.txt
+
+# Install JupyterLab and IPython kernel for interactive development
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --prefer-binary -r /workspace/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --prefer-binary jupyterlab ipykernel
+
+COPY . /workspace
+
+RUN python -m ipykernel install --sys-prefix \
+    --name met4a-data-manager \
+    --display-name "Python (met4a-data-manager)"
+
+# Expose the default JupyterLab port
+EXPOSE 8888
+
+# Use tini as the entrypoint to handle signal forwarding and process reaping
+ENTRYPOINT ["/usr/bin/tini", "--"]
+# Start JupyterLab when the container runs, binding to all interfaces and allowing root access
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
