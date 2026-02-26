@@ -1,6 +1,8 @@
 import pickle
 import pandas as pd
+import numpy as np
 from pathlib import Path
+
 
 def load_pickle(path: str):
     """
@@ -101,5 +103,37 @@ def convert_to_datetime(start_time, offsets):
     """
     start_dt = pd.to_datetime(start_time, unit="s")
     time_axis = start_dt + pd.to_timedelta(offsets, unit="s")
-    
+
     return time_axis
+
+def coalesce_time_pressure(data_list, concatenate=False):
+    """
+    Coalesce multiple time and pressure arrays into single lists.
+
+    Parameters
+    ----------
+    data_list : list of dicts
+        List of dictionaries, each containing 'start_time', 'times', and 'pressure' keys
+    concatenate : bool, optional
+        If True, concatenate the lists into single numpy arrays. If False, return as lists of arrays. Default is False.
+
+    Returns
+    -------
+    coalesced_time : list or np.ndarray
+        Coalesced time data, either as a list of arrays or a single concatenated array
+    coalesced_pressure : list or np.ndarray
+        Coalesced pressure data, either as a list of arrays or a single concatenated array
+    """
+    coalesced_time = []
+    coalesced_pressure = []
+    
+    for data in data_list:
+        time_axis = convert_to_datetime(data['start_time'], data['times'])
+        coalesced_time.append(time_axis)
+        coalesced_pressure.append(data['pressure'])
+    
+    if concatenate:
+        coalesced_time = np.concatenate(coalesced_time)
+        coalesced_pressure = np.concatenate(coalesced_pressure)
+    
+    return coalesced_time, coalesced_pressure
