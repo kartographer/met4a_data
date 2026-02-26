@@ -82,3 +82,24 @@ def load_all_pickles(directory: str | Path) -> list:
         objects.append(obj)
 
     return objects
+
+def convert_to_datetime(start_time, offsets):
+    """
+    Convert start time and offsets to a pandas DatetimeIndex.
+
+    Parameters
+    ----------
+    start_time : int or float
+        Start time in seconds since epoch
+    offsets : list or array-like
+        List of time offsets in seconds to add to the start time
+
+    Returns
+    -------
+    time_axis : pd.DatetimeIndex
+        DatetimeIndex representing the time axis for the data
+    """
+    start_dt = pd.to_datetime(start_time, unit="s")
+    time_axis = start_dt + pd.to_timedelta(offsets, unit="s")
+    
+    return time_axis
