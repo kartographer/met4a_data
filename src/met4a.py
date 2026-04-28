@@ -130,7 +130,7 @@ def coalesce_time_pressure(data_list, concatenate=False):
     for data in data_list:
         time_axis = convert_to_datetime(data['start_time'], data['times'])
         coalesced_time.append(time_axis)
-        coalesced_pressure.append(data['pressure'])
+        coalesced_pressure.append(data['pressure'] + data['ref_pressure'])
     
     if concatenate:
         coalesced_time = np.concatenate(coalesced_time)
