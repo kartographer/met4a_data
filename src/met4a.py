@@ -3,8 +3,9 @@ import pickle
 from attrs import fields
 import pandas as pd
 from pathlib import Path
+import numpy as np
 
-def load_pickle(path: str):
+def load_met4a_pickle(path: str):
     """
     Load and return data from a pickle file.
 
@@ -22,6 +23,25 @@ def load_pickle(path: str):
         data = pickle.load(f)
 
     return data
+
+def load_met4a_npz(path: str | Path) -> dict:
+    """
+    Load a MET4A .npz file written by station_runner.
+    Returns
+    -------
+    dict
+        Dictionary containing metadata plus a recarray named 'samples'.
+    """
+
+    archive = np.load(path)
+
+    return {
+        "start_time": float(archive["start_time"]),
+        "ref_pressure": float(archive["ref_pressure"]),
+        "scale_fac": float(archive["scale_fac"]),
+        "nsamp": int(archive["nsamp"]),
+        "samples": archive["samples"].view(np.recarray),
+    }
 
 def dict_to_df(data: dict) -> pd.DataFrame:
     """
@@ -58,7 +78,7 @@ def dict_to_df(data: dict) -> pd.DataFrame:
 
     raise ValueError("Unsupported dictionary format for DataFrame conversion.")
 
-def load_all_pickles(directory: str | Path) -> list:
+def load_all_met4a_pickles(directory: str | Path) -> list:
     """
     Load all pickle files from a directory into a list.
 
@@ -79,12 +99,29 @@ def load_all_pickles(directory: str | Path) -> list:
 
     objects = []
 
-    # Sort so results are deterministic (very helpful for notebooks)
     for pkl_path in sorted(directory.glob("*.pkl")):
-        obj = load_pickle(pkl_path)
+        obj = load_met4a_pickle(pkl_path)
         objects.append(obj)
 
     return objects
+
+def load_all_met4a_npz(directory: str | Path) -> list[dict]:
+
+    """Load all MET4A .npz files from a directory."""
+
+    directory = Path(directory)
+
+    if not directory.exists():
+
+        raise FileNotFoundError(f"Directory not found: {directory}")
+
+    return [
+
+        load_met4a_npz(path)
+
+        for path in sorted(directory.glob("*.met4a.npz"))
+
+    ]
 
 def convert_to_datetime(start_time, offsets):
     """
@@ -139,38 +176,3 @@ def coalesce_time_pressure(data_list, concatenate=False):
     
     return coalesced_time, coalesced_pressure
 
-def parse_to_recarray(path: str) -> np.recarray:
-    """
-    Parse a CSV file into a NumPy record array with appropriate data types.
-
-    Parameters
-    ----------
-    path : str
-        Path to the CSV file to be parsed.
-
-    Returns
-    -------
-    np.recarray
-        A NumPy record array containing the parsed data with fields: time, pressure, temperature, altitude, and status.
-    """
-    def parse_time(x):
-        if isinstance(x, bytes):        # Convert bytes to string
-            x = x.decode()
-        return int(x.replace("*", ""))  # Remove asterisks from input string
-
-    data = np.genfromtxt(
-        path,
-        delimiter=",",
-        dtype=[
-            ("time", "i4"),
-            ("pressure", "f8"),
-            ("temperature", "f8"),
-            ("altitude", "f8"),
-            ("status", "i4"),
-        ],
-        converters={0: parse_time},     # Apply parse_time function to 'time' column
-        invalid_raise=False,            # Ignore invalid values, setting them to NaN for floats and 0 for integers
-        ndmin=1,                        # Ensure output is at least 1-dimensional in case that file has only one line of data
-    )
-
-    return data.view(np.recarray)
