@@ -140,7 +140,7 @@ def coalesce_time_pressure(data_list, concatenate=False):
 
 import pickle
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Literal
 
 import numpy as np
 
@@ -168,22 +168,32 @@ def load_met4a_pickle(path: str | Path) -> dict:
 
 def met4a_dict_to_recarray(
     data: dict,
+    *,
+    values: Literal["absolute", "relative"] = "absolute",
 ) -> np.recarray:
     """
-    Convert one MET4A dictionary into a sample record array.
+    Convert one MET4A dictionary into an absolute-value sample record array.
+
+    Set ``values="relative"`` for older pickle files whose times are offsets
+    from ``start_time`` and whose pressures are offsets from ``ref_pressure``.
     """
 
     samples = np.empty(int(data["nsamp"]), dtype=MET4A_SAMPLE_DTYPE)
 
-    samples["time"] = float(data["start_time"]) + np.asarray(
-        data["times"], dtype=np.float64
-    )
+    times = np.asarray(data["times"], dtype=np.float64)
+    pressure = np.asarray(data["pressure"], dtype=np.float64)
 
-    for field in ("pressure", "temp", "rh"):
-        samples[field] = np.asarray(data[field], dtype=np.float64)
+    if values == "relative":
+        times = float(data["start_time"]) + times
+        pressure = float(data["ref_pressure"]) + pressure
 
-    samples["ref_pressure"] = float(data["ref_pressure"])
-    samples["scale_fac"] = float(data["scale_fac"])
+    samples["time"] = times
+    samples["pressure"] = pressure
+    samples["temp"] = np.asarray(data["temp"], dtype=np.float64)
+    samples["rh"] = np.asarray(data["rh"], dtype=np.float64)
+
+    samples["ref_pressure"] = float(data.get("ref_pressure", 0.0))
+    samples["scale_fac"] = float(data.get("scale_fac", np.nan))
 
     return samples.view(np.recarray)
 
@@ -220,9 +230,12 @@ def load_met4a_pickles(
     paths_or_directory: str | Path | Iterable[str | Path],
     *,
     pattern: str = "*.met4a.pkl",
+    values: Literal["absolute", "relative"] = "absolute",
 ) -> np.recarray:
     """
-    Load pickle blocks into one timestamp-sorted recarray.
+    Load pickle blocks into one timestamp-sorted absolute-value recarray.
+
+    Set ``values="relative"`` when loading the older relative-value format.
     """
     if isinstance(paths_or_directory, (str, Path)):
         candidate = Path(paths_or_directory)
@@ -231,7 +244,7 @@ def load_met4a_pickles(
         paths = [Path(path) for path in paths_or_directory]
 
     blocks = [
-        met4a_dict_to_recarray(load_met4a_pickle(path))
+        met4a_dict_to_recarray(load_met4a_pickle(path), values=values)
         for path in paths
     ]
     return concatenate_met4a_recarrays(blocks)
